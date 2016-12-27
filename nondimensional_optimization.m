@@ -2,8 +2,9 @@
 %I have accomplished generating multi path min snap trajectory
 %Using MATLAB's symbolic calculations allowing only positional constraints
 %Advantage of using symbolic toolbox is that it greatly reduces size of
-%code however it is very very slow. So should only be used when we are
-%doing symboic calculation over and over in many iterations.
+%code however it is very very slow. So converted symbolic function into
+%MATLAB annonymous function using matlabFunction which greatly increases
+%spped
 
 %Input:
 %numSegment = no. of piece wise segments
@@ -22,9 +23,9 @@ polynomialDegree = maxPositionPolynomial;
 
 %Storing derivatives of polynomial for faster processing
 global derivativeCache
-derivativeCache = sym(zeros(5,7));
+derivativeCache = cell(5,1);
 for index=1:5
-    derivativeCache(index, :) = getPositionDerivatives(index-1);
+    derivativeCache{index} = getPositionDerivatives(index-1);
 end
 
 %Make sure position, velocity, acceleration and snap remain same at segment
@@ -59,7 +60,7 @@ A_EQ = getConstraintsMatrix(t', 4, timeForEachSegment, numSegment);
 objective = (A_EQ*parameter)'.^2;
 end
 
-function [A_EQ, B_eq] = getContinuityConstraintForSegmentBoundary(timeForEachSegment, numSegment, maxSmoothDerivativeAtBoundary)
+function [A_EQ, B_eq] = getContinuityConstraintForSegmentBoundary(numSegment, timeForEachSegment, maxSmoothDerivativeAtBoundary)
 global polynomialDegree
 totalElement = polynomialDegree + 1;
 global derivativeCache
@@ -73,7 +74,7 @@ for index= 1:size(times, 2) - 1
     time = times(index);
     start = (index -1)*totalElement + matlab_offset;
     for smoothDerivative =1:maxSmoothDerivativeAtBoundary
-        constraintRow = double(subs(derivativeCache(smoothDerivative, :), time));
+        constraintRow = derivativeCache{smoothDerivative}(time);
         
         %The way we make sure derivative is same at segment boundary is by
         %[polynomial_derivative, - polnomial_derivate,...] *
@@ -95,7 +96,7 @@ A_EQ_constraints = zeros(size(times,1), totalElement*numSegment);
 for index = 1:size(times, 1)
     time = times(index);
     segmentNo = max(0, ceil(time/timeForEachSegment) - 1); %segmentNo starts from 0, handling special case of 0
-    A_EQ_constraints(index, :) =  generateRowForSegment(double(subs(derivativeCache(whichDerivative+1, :), time)), segmentNo, numSegment);
+    A_EQ_constraints(index, :) =  generateRowForSegment(derivativeCache{whichDerivative+1}(time), segmentNo, numSegment);
 end
 end
 
@@ -123,5 +124,6 @@ positionWOParams = sym('x', [1  totalElement]);
 for degree=0:polynomialDegree
     positionWOParams(degree + 1) = power(x, degree);
 end
-dpositionWoParamsdx = diff(positionWOParams, numDerivatives);
+dpositionWoParamsdx = matlabFunction(diff(positionWOParams, numDerivatives));
+%matlabFunction greatly improves speed
 end
