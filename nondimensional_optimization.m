@@ -85,7 +85,7 @@ A_INEQ = A_INEQ * (1 - unitVector(1)^2);
 A_INEQ = kron(A_INEQ, [1; -1]);
 
 B_ineq = (maxCorridor*ones(numIntermediateConstraints, 1));
-B_ineq = kron(B_ineq, [1; 1]) + kron((tConstraints' - tmin)*unitVector(1)*unitVector(2), [1; -1]);% |pos| <= max_corridor
+B_ineq = kron(B_ineq, [1; 1]) + kron((tConstraints' - tmin)*unitVector(1)*unitVector(2) + pmin*(1-unitVector(1)^2), [1; -1]);% |pos| <= max_corridor
 end
 
 
@@ -97,11 +97,12 @@ global polynomialDegree
 totalElement = polynomialDegree + 1;
 
 matlabOffset = 1;
-numIntermediateConstraints = 10;
+numIntermediateConstraints = 100;
 %double because of absolute constraint
 totalGeneratedIntermediateConstraints = numIntermediateConstraints * 2;
 A_INEQ = zeros(totalGeneratedIntermediateConstraints, totalElement*numSegment);
 B_ineq = [];
+boundary_to_nextsegment = 1;
 for index=1:size(waypointConstraints, 1)-1
     pmax = waypointConstraints(index+1, 1);
     pmin = waypointConstraints(index, 1);
@@ -111,7 +112,7 @@ for index=1:size(waypointConstraints, 1)-1
     [A_INEQ_segment, B_ineq_segment] = generateCorridorConstraintsForSingleSegment(tmax, tmin , pmax, pmin, corridorConstraintWidth, numIntermediateConstraints);
     
     rowNo = (index - 1)*totalGeneratedIntermediateConstraints + matlabOffset;
-    colNo = calcSegmentNo(tmin, timeForEachSegment)*totalElement + matlabOffset;
+    colNo = calcSegmentNo(tmin, timeForEachSegment, boundary_to_nextsegment)*totalElement + matlabOffset;
     A_INEQ(rowNo:(rowNo + totalGeneratedIntermediateConstraints - 1), colNo:(colNo + polynomialDegree))  = A_INEQ_segment;
     B_ineq = [B_ineq; B_ineq_segment];
 end
@@ -153,13 +154,18 @@ global derivativeCache
 A_EQ_constraints = zeros(size(times,1), totalElement*numSegment);
 for index = 1:size(times, 1)
     time = times(index);
-    segmentNo = calcSegmentNo(time, timeForEachSegment);
+    segmentNo = calcSegmentNo(time, timeForEachSegment, 0);
     A_EQ_constraints(index, :) =  generateRowForSegment(derivativeCache{whichDerivative+1}(time), segmentNo, numSegment);
 end
 end
 
-function segmentNo = calcSegmentNo(time, timeForEachSegment)
-segmentNo = max(0, ceil(time/timeForEachSegment) - 1); %segmentNo starts from 0, handling special case of 0
+function segmentNo = calcSegmentNo(time, timeForEachSegment, boundary_to_nextsegment)
+if boundary_to_nextsegment == 0
+    segmentNo = max(0, ceil(time/timeForEachSegment) - 1); %segmentNo starts from 0, handling special case of 0
+else
+    segmentNo = max(0,floor(time/timeForEachSegment));
+end
+
 end
 
 %actualRow = row containing constraints for segments
