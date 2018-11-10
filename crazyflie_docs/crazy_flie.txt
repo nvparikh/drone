@@ -34,7 +34,7 @@ CRTP Protocol
 The protocol used to communicate with the Crazyflie is called the Crazy RealTime Protocol, or CRTP in short. It's a simple protocol mainly designed to suit the radio chip used on the Crazyflie but the protocol can also be used on other physical links.
 
 Used from Android client to CrazyFlie communication.
-https://wiki.bitcraze.io/projects:crazyflie:crtp
+
 
 LOGGING
 Logging is complex task in Crazyflie, client can define which variables will get logged in crazyflie during runtime and how frequently will be sent back to client.
@@ -98,5 +98,8 @@ Travis CI - https://docs.travis-ci.com/user/getting-started/ for continuous inte
 
 Running tests: https://github.com/bitcraze/crazyflie2-nrf-firmware/blob/master/CONTRIBUTING.md - ./tools/build/build
 
+
+Embedded OS timer/ISR/sceduling:
+https://www.elesoftrom.com.pl/en/os/multithreaded_programming.pdf
 
 
