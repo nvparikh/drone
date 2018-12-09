@@ -59,7 +59,7 @@ if nargin > 2 %First time call
         num_seg_1_extra_const = ceil(remaining_constraints/2);
         num_last_seg_extra_const = floor(remaining_constraints/2);
         [A_EQ_remaining_seg_1, B_eq_remaining_seg_1] = getPerSegmentConstraints(zeros(num_seg_1_extra_const,1), 2:2+num_seg_1_extra_const-1, 1, 0);
-        [A_EQ_remaining_seg_last, B_eq_remaining_seg_last] = getPerSegmentConstraints(zeros(num_last_seg_extra_const,1), 2:2+num_last_seg_extra_const-1, num_segments, time_per_segments(num_segments)*num_segments);
+        [A_EQ_remaining_seg_last, B_eq_remaining_seg_last] = getPerSegmentConstraints(zeros(num_last_seg_extra_const,1), 2:2+num_last_seg_extra_const-1, num_segments, time_per_segments(num_segments));
         A_EQ=[A_EQ_segment_boundary;A_EQ_position;A_EQ_remaining_seg_1;A_EQ_remaining_seg_last];
         B_eq=[B_eq_segment_boundary;B_eq_position;B_eq_remaining_seg_1;B_eq_remaining_seg_last];
         parameters(:,i) = A_EQ\B_eq;
