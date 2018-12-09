@@ -14,7 +14,7 @@ addpath('utils');
 real_time = true;
 
 % max time
-max_time = 20;
+max_time = 10;
 
 % parameters for simulation
 params = sys_params;
@@ -99,9 +99,10 @@ for iter = 1:max_iter
     end
 
     % Check termination criteria
-    if terminate_check(x, time, stop_pos, pos_tol, vel_tol, max_time)
-        break
-    end
+    %This doesnt work sometime, removing the check
+    %if terminate_check(x, time, stop_pos, pos_tol, vel_tol, max_time)
+    %    break
+    %end
 end
 
 %% ************************* POST PROCESSING *************************
