@@ -14,6 +14,9 @@ addpath('utils');
 trajhandle = @traj_generator;
 waypoints = [0    0   0;
              4    0   0;
+             4 4 0;
+             0 4 0;
+             0 0 0
              ]';
 trajhandle([],[],waypoints);
 
