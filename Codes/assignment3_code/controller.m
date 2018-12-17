@@ -24,7 +24,7 @@ F = 0;
 % Moment
 M = zeros(3,1);
 
-Kpz = 10;
+Kpz = 5;
 Kpx = 5;
 Kpy= 5;
 Kdz = 2;

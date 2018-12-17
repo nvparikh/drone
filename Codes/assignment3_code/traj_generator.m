@@ -49,22 +49,35 @@ if nargin > 2 %First time call
     d = waypoints(:,2:end) - waypoints(:,1:end-1);
     d0 = sqrt(d(1,:).^2 + d(2,:).^2 + d(3,:).^2);
     num_segments = size(waypoints,2) -1;
-    time_for_1_distance = 1;
+    time_for_1_distance = 2;
     time_per_segments = cumsum(d0*time_for_1_distance)
     times = time_per_segments; %to retail times for each segments
     snapDerivativeIndex = 5;
     parameters_length = num_coordinates*num_segments*total_element;
-    [A_EQ_segment_boundary, B_eq_segment_boundary] = getContinuityConstraintForSegmentBoundary(pDegree-1);
-    [A_EQ_position, B_eq_position] = getAbsoluteConstraints(waypoints', 1, [0 time_per_segments]);
-    remaining_constraints = (parameters_length - (size(A_EQ_segment_boundary,1)+size(A_EQ_position,1)))/num_coordinates;
-    num_seg_1_extra_const = ceil(remaining_constraints/2); %position, velocity, accleration = 0 at beggining
-    num_last_seg_extra_const = floor(remaining_constraints/2); %position, velocity, accleration = 0 at end
-    [A_EQ_remaining_seg_1, B_eq_remaining_seg_1] = getPerSegmentConstraints(zeros(num_seg_1_extra_const,num_coordinates), 2:2+num_seg_1_extra_const-1, 1, 0);
-    [A_EQ_remaining_seg_last, B_eq_remaining_seg_last] = getPerSegmentConstraints(zeros(num_last_seg_extra_const,num_coordinates), 2:2+num_last_seg_extra_const-1, num_segments, time_per_segments(num_segments));
-    A_EQ=[A_EQ_segment_boundary;A_EQ_position;A_EQ_remaining_seg_1;A_EQ_remaining_seg_last]
-    B_eq=[B_eq_segment_boundary;B_eq_position;B_eq_remaining_seg_1;B_eq_remaining_seg_last]
+
+    [A_EQ_segment_boundary, B_eq_segment_boundary] = getContinuityConstraintForSegmentBoundary(3)
+    [A_EQ_position, B_eq_position] = getAbsoluteConstraints(waypoints', 1, [0 time_per_segments])
+    %remaining_constraints = num_segments*total_element - (size(A_EQ_segment_boundary,1)+size(A_EQ_position,1));
+    num_seg_1_extra_const = pDegree-1; %position, velocity, accleration = 0 at beggining
+    num_last_seg_extra_const = pDegree-1; %position, velocity, accleration = 0 at end
+    [A_EQ_remaining_seg_1, B_eq_remaining_seg_1] = getPerSegmentConstraints(zeros(num_seg_1_extra_const,num_coordinates), 2:2+num_seg_1_extra_const-1, 1, 0)
+    [A_EQ_remaining_seg_last, B_eq_remaining_seg_last] = getPerSegmentConstraints(zeros(num_last_seg_extra_const,num_coordinates), 2:2+num_last_seg_extra_const-1, num_segments, time_per_segments(num_segments))
+    A_EQ=[A_EQ_segment_boundary;A_EQ_position;A_EQ_remaining_seg_1;A_EQ_remaining_seg_last];
+    B_eq=[B_eq_segment_boundary;B_eq_position;B_eq_remaining_seg_1;B_eq_remaining_seg_last];
     %parameters(:,i) = A_EQ\B_eq;
-    parameters = A_EQ\B_eq
+    %Solving constraint optimization problem to find parameters
+    %objectiveFun can be passed, but in this code it is hard coded to
+    %integration(square(snap)). Integration can be done analytically in this
+    %case and used. But we are numerically integrating square(snap)
+    objFunction = @(params) integral(@(t) objectiveFunValue(t, snapDerivativeIndex, params), 0,time_per_segments(end));
+
+    %Col vector for all segements [param_seg1, param_seg2...]'
+    initialParams = 10*rand(parameters_length, 1);
+    options = optimoptions('fmincon','Algorithm','sqp');
+    [params, fval, exitflag, output] = fmincon(objFunction, initialParams, [], [], A_EQ, B_eq,[],[],[],options);
+    disp(output);
+    parameters = params;
+
     way_points = waypoints;
 else
     if(t > times(end))
@@ -72,9 +85,11 @@ else
     end
     seg_no = get_segment_no(t);
     seg_index_start = (seg_no-1)*(pDegree+1);
-    desired_state.pos = zeros(noCoordinates,1);
-    desired_state.vel = zeros(noCoordinates,1);
-    desired_state.acc = zeros(noCoordinates,1);
+
+    desired_state.pos = zeros(noCoordinates, 1);
+    desired_state.vel = zeros(noCoordinates, 1);
+    desired_state.acc = zeros(noCoordinates, 1);
+
     for coor = 1:noCoordinates
         coor_start = get_coordinate_start(coor) + seg_index_start;
         param_indeces = coor_start:coor_start+pDegree;

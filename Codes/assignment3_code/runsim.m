@@ -12,11 +12,11 @@ addpath('utils');
 %% Trajectory generation with waypoints
 %% You need to implement this
 trajhandle = @traj_generator;
-waypoints = [0    0   0;
-             4    0   0;
-             4 4 0;
-             0 4 0;
-             0 0 0
+
+waypoints = [0 0    2;
+             0 1    2;
+             0 1    0;
+             0 0    0;
              ]';
 trajhandle([],[],waypoints);
 
